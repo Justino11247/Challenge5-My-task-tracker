@@ -9,8 +9,19 @@ body {
 
 .task-card {
   margin: 0 auto;
+  max-width: 300px;
 }
 
 .task-card:hover {
   cursor: grab;
 }
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 500;
+}
+
+
+
