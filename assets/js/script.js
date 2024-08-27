@@ -8,7 +8,14 @@ const taskDueDate = $('#taskDueDate');
 const taskDescription = $('#task-description');
 const addTaskBtn = $('#add-task');
 const modalForm = $('.modal-content');
-const toDo = $('#todo-cards')
+const toDo = $('#todo-cards');
+
+//Lanes for cards
+const todoList = $('#todo-cards').addClass('.lane');
+  
+const inProgressList = $('#in-progress-cards').addClass('.lane');
+
+const doneList = $('#done-cards').addClass('.lane');
 
 
 // Todo: create a function to generate a unique task id
@@ -22,7 +29,7 @@ function generateTaskId() {
 
 // Todo: create a function to create a task card
 function createTaskCard(task) {
-  const taskCard = $('<div>').addClass('task-card').attr('data-task-id', task.id);
+  const taskCard = $('<div>').addClass('task-card draggable').attr('data-task-id', task.id);
   const cardHeader =$('<div>').addClass('card-header h4').text(task.title); 
   const cardBody = $('<div>').addClass('card-body');
   const cardDueDate = $('<p>').addClass('card-text').text(task.dueDate);
@@ -57,12 +64,8 @@ function createTaskCard(task) {
 // Todo: create a function to render the task list and make cards draggable
 function renderTaskList() {
 
-  // Empty existing project cards out of the lanes
-  const todoList = $('#todo-cards');
   
-  const inProgressList = $('#in-progress-cards');
 
-  const doneList = $('#done-cards');
   
   // Loop through projects and create project cards for each status
   for (let task of taskList) {
@@ -82,9 +85,9 @@ function renderTaskList() {
     // This is the function that creates the clone of the card that is dragged. This is purely visual and does not affect the data.
     helper: function (e) {
       // Check if the target of the drag event is the card itself or a child element. If it is the card itself, clone it, otherwise find the parent card  that is draggable and clone that.
-      const original = $(e.target).hasClass('ui-draggable')
+      const original = $(e.target).hasClass('draggable')
         ? $(e.target)
-        : $(e.target).closest('.ui-draggable');
+        : $(e.target).closest('.draggable');
       // Return the clone with the width set to the width of the original card. This is so the clone does not take up the entire width of the lane. This is to also fix a visual bug where the card shrinks as it's dragged to the right.
       return original.clone().css({
         width: original.outerWidth(),
@@ -121,24 +124,43 @@ addTaskBtn.on('click', handleAddTask); // Calls the above function when the Add 
 
 // Todo: create a function to handle deleting a task
 function handleDeleteTask(event){
-  console.log('end the delete function', event.target )
-  const taskId = $(this).attr('data-task-id');
-  console.log(taskId)
+  const deleteId = event.target.id;
+  let taskList = JSON.parse(localStorage.getItem("tasks"));
 
-  taskList.forEach((task, index) => {
-    console.log(task)
-    if (task.id === taskId) {
+  // The task with the appropriate Id from the array is the only task deleted.
+  taskList.forEach(function (task, index) {
+    if (task.id == deleteId) {
       taskList.splice(index, 1);
-      console.log(index)
     }
   });
   localStorage.setItem('task', JSON.stringify(taskList));
+  renderTaskList();
 }
 
 //taskDisplayEl.on('click', '.btn-delete-project', handleDeleteTask);
 
 // Todo: create a function to handle dropping a task into a new status lane
 function handleDrop(event, ui) {
+  //Element's Id thats been dropped
+  const taskId = ui.draggable[0].id;
+
+  //Updates the status to the appropriate lane by finding the task by its "id".
+  const newStatus = event.target.id;
+
+  const updateTasks = JSON.parse(localStorage.getItem("task"));
+
+  for (let i = 0; i < updateTasks.length; i++) {
+    // Current task grabbed
+    const task = updateTasks[i];
+
+    if (task.id == taskId) {
+      task.status = newStatus;
+    }
+  }
+  // Update tasks in local storage
+  localStorage.setItem("tasks", JSON.stringify(updateTasks));
+  // Render the updated task list
+  renderTaskList();
 
 }
 
@@ -148,6 +170,8 @@ $(document).ready(function () {
     changeMonth: true,
     changeYear: true,
   });
+
+  $(".container").on("click", ".deleteBtn", handleDeleteTask);
 
   // Make lanes droppable
   $('.lane').droppable({
